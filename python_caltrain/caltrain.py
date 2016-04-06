@@ -1,6 +1,8 @@
 import csv
 from collections import namedtuple
 from datetime import datetime
+import os
+import pkg_resources
 import re
 import sys
 from zipfile import ZipFile
@@ -10,13 +12,20 @@ from io import TextIOWrapper
 Trip = namedtuple('Trip', ['id', 'type', 'direction',
                            'stops', 'service_window'])
 Station = namedtuple('Station', ['name', 'zone'])
-Stop = namedtuple('Stop', ['arrival', 'departure'])
+Stop = namedtuple('Stop', ['arrival', 'departure', 'stop_number'])
 ServiceWindow = namedtuple('ServiceWindow', ['start', 'end', 'days'])
 TransitType = namedtuple('TransitType', ['type'])
 
 
 def _sanitize_name(name):
     return ''.join(re.split('[^A-Za-z0-9]', name)).lower()
+
+#TODO: Remove this when Caltrain staff learn how a 24 hour clock works.
+def _sanitize_time(time):
+    hour, minute, second = time.split(':')
+    if int(hour) >= 24:
+        hour = str(int(hour) - 24)
+    return ':'.join([hour, minute, second])
 
 _ZONE_OFFSET = 3328
 
@@ -26,6 +35,7 @@ _RENAME_MAP = {
     'S SAN FRANCISCO': 'SOUTH SAN FRANCISCO'
 }
 
+_DEFAULT_GTFS_FILE = '../resources/caltrain_gtfs_latest.zip'
 _ALIAS_MAP_RAW = {
     'SAN FRANCISCO': ('SF', 'SAN FRAN'),
     'SOUTH SAN FRANCISCO': ('S SAN FRANCISCO', 'SOUTH SF',
@@ -63,10 +73,14 @@ class Caltrain(object):
         self._service_windows = {}
         self._fairs = {}
 
-        if gtfs_path:
-            self.load_from_gtfs(gtfs_path)
+        self.load_from_gtfs(gtfs_path)
 
-    def load_from_gtfs(self, gtfs_path):
+    def load_from_gtfs(self, gtfs_path=None):
+
+        # Use the default path if not specified.
+        if gtfs_path is None:
+            gtfs_path = pkg_resources\
+                .resource_stream(__name__, _DEFAULT_GTFS_FILE)
 
         z = ZipFile(gtfs_path)
 
@@ -161,12 +175,17 @@ class Caltrain(object):
                 if stop_id in ignored_stops:
                     continue
                 trip = self.trips[r['trip_id']]
-                arrival = datetime.strptime(r['arrival_time'],
+                arrival_time_raw, departure_time_raw = \
+                    _sanitize_time(r['arrival_time']), \
+                    _sanitize_time(r['departure_time'])
+
+                arrival = datetime.strptime(arrival_time_raw,
                                             '%H:%M:%S').time(),
-                departure = datetime.strptime(r['departure_time'],
+                departure = datetime.strptime(departure_time_raw,
                                               '%H:%M:%S').time()
                 trip.stops[self.stations[r['stop_id']]] =\
-                    Stop(arrival=arrival, departure=departure)
+                    Stop(arrival=arrival, departure=departure,
+                         stop_number=int(r['stop_sequence']))
 
         # For display
         self.stations = \
@@ -203,23 +222,23 @@ class Caltrain(object):
             sw = trip.service_window
 
             # Check to see if the trip contains our stations and is available.
-            if after < sw.start or after > sw.end or \
+            if after.date() < sw.start or after.date() > sw.end or \
                after.weekday() not in sw.days or \
                a not in trip.stops or b not in trip.stops:
                 continue
 
-            leave_from_a = trip.stops[a].departure
-            arrive_at_b = trip.stops[b].arrival
+            stop_a = trip.stops[a]
+            stop_b = trip.stops[b]
 
             # Check to make sure this train is headed in the right direction.
-            if leave_from_a > arrive_at_b:
+            if stop_a.stop_number > stop_b.stop_number:
                 continue
 
             # Check to make sure this train has not left yet.
-            if leave_from_a < (after.hour, after.minute):
+            if stop_a.departure < after.time():
                 continue
 
-            possibilities += [(name, leave_from_a, arrive_at_b, trip.type)]
+            possibilities += [(name, stop_a.departure, stop_b.arrival, trip.type)]
 
         possibilities.sort(key=lambda x: x[1])
         return possibilities
