@@ -35,7 +35,7 @@ _RENAME_MAP = {
     'S SAN FRANCISCO': 'SOUTH SAN FRANCISCO'
 }
 
-_DEFAULT_GTFS_FILE = '../resources/caltrain_gtfs_latest.zip'
+_DEFAULT_GTFS_FILE = 'data/caltrain_gtfs_latest.zip'
 _ALIAS_MAP_RAW = {
     'SAN FRANCISCO': ('SF', 'SAN FRAN'),
     'SOUTH SAN FRANCISCO': ('S SAN FRANCISCO', 'SOUTH SF',
