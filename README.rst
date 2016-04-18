@@ -108,7 +108,8 @@ future?
 Station names do not need to be sanitized. The
 ``Caltrain.get_station(...)``, ``Caltrain.next_trip(...)``, and
 ``Caltrain.fare_between(...)`` functions all perform sanitization
-themselves and know other common name.
+themselves and can automatically resolve alternate common names for
+stations.
 
 For example, ``sf``, ``sanfrancisco``, ``san fran``,
 ``san francisco station`` are all understood as the same station. Same
