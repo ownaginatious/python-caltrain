@@ -19,7 +19,6 @@ setup(
     include_package_data=True,
     exclude_package_data={'': ['README.rst', 'LICENSE']},
     classifiers=[
-        'Environment :: Console',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
