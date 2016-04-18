@@ -10,7 +10,7 @@ setup(
     author='Dillon Dixon',
     author_email='dillondixon@gmail.com',
     url='https://github.com/ownaginatious/python-caltrain',
-    download_url='https://github.com/ownaginatious/fbchat-archive-parser/tarball/2016.4.0',
+    download_url='https://github.com/ownaginatious/python-caltrain/tarball/2016.4.0',
     license='MIT',
     keywords=['caltrain', 'python'],
     zip_safe=True,
