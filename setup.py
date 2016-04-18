@@ -4,18 +4,20 @@ from io import open
 
 setup(
     name='python-caltrain',
-    packages = find_packages (exclude = ["tests",]),
-    version='2016.4.1',
-    description='A library for working with raw Caltrain scheduling data in Python',
+    packages=find_packages(exclude=["tests"]),
+    version='2016.4.2',
+    description='A library for working with raw Caltrain scheduling'
+                'data in Python',
     author='Dillon Dixon',
     author_email='dillondixon@gmail.com',
     url='https://github.com/ownaginatious/python-caltrain',
-    download_url='https://github.com/ownaginatious/python-caltrain/tarball/2016.4.1',
+    download_url='https://github.com/ownaginatious/python-caltrain'
+                 '/tarball/2016.4.2',
     license='MIT',
     keywords=['caltrain', 'python'],
     zip_safe=True,
     include_package_data=True,
-    exclude_package_data = { '': ['README.rst', 'LICENSE'] },
+    exclude_package_data={'': ['README.rst', 'LICENSE']},
     classifiers=[
         'Environment :: Console',
         'License :: OSI Approved :: MIT License',
@@ -24,7 +26,7 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5'
     ],
-    install_requires = [line.strip ()
-                        for line in open ("requirements.txt", "r",
-                                          encoding="utf-8").readlines ()],
+    install_requires=[line.strip()
+                      for line in open("requirements.txt", "r",
+                                       encoding="utf-8").readlines()],
 )

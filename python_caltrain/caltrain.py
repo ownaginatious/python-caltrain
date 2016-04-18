@@ -21,9 +21,25 @@ Stop = namedtuple('Stop', ['arrival', 'arrival_day',
                            'departure', 'departure_day',
                            'stop_number'])
 ServiceWindow = namedtuple('ServiceWindow', ['start', 'end', 'days'])
-Trip = namedtuple('Trip', ['departure', 'arrival', 'duration', 'train'])
 
 _BASE_DATE = datetime(1970, 1, 1, 0, 0, 0, 0)
+
+
+class Trip(namedtuple('Trip', ['departure', 'arrival', 'duration', 'train'])):
+
+    def __str__(self):
+        return "[%s %s] Departs: %s, Arrives: %s (%s)" % \
+                (str(self.train.kind), self.train.name, str(self.departure),
+                 str(self.arrival), str(self.duration))
+
+    def __unicode__(self):
+        return unicode(self.__str__())
+
+    def __repr__(self):
+        return "Trip(departure=%s, arrival=%s, duration=%s, " \
+               "train=Train(name=%s))" % \
+                (repr(self.departure), repr(self.arrival),
+                 repr(self.duration), self.train.name)
 
 
 def _sanitize_name(name):
@@ -324,7 +340,8 @@ class Caltrain(object):
         :type a: str or unicode or Station
         :param b: the destination station
         :type b: str or unicode or Station
-        :param after: the time to find the next trips after (default datetime.now())
+        :param after: the time to find the next trips after
+                      (default datetime.now())
         :type after: datetime
 
         :returns: a list of possible trips
@@ -338,7 +355,8 @@ class Caltrain(object):
 
             sw = train.service_window
 
-            # Check to see if the train's stops contains our stations and is available.
+            # Check to see if the train's stops contains our stations
+            # and is available.
             if after.date() < sw.start or after.date() > sw.end or \
                after.weekday() not in sw.days or \
                a not in train.stops or b not in train.stops:

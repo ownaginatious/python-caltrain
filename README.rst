@@ -70,6 +70,13 @@ What kind of train is it?
     >> str(n.train.kind)
     'Local'
 
+Can you print a summary of the trip?
+
+.. code:: python
+
+    >> str(n)
+    [Local 143] Departs: 11:26:00, Arrives: 12:43:00 (1:17:00)
+
 Does that train stop at San Mateo? If so, when?
 
 .. code:: python
