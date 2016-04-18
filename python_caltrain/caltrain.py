@@ -6,7 +6,7 @@ import pkg_resources
 import re
 import sys
 from zipfile import ZipFile
-from enum import Enum
+from enum import Enum, unique
 from io import TextIOWrapper
 
 Trip = namedtuple('Trip', ['tid', 'kind', 'direction',
@@ -74,16 +74,21 @@ for k, v in _ALIAS_MAP_RAW.items():
         _ALIAS_MAP[_sanitize_name(x)] = _sanitize_name(k)
 
 
+@unique
 class Direction(Enum):
     north = 0
     south = 1
 
 
+@unique
 class TransitType(Enum):
     baby_bullet = "bu"
     limited = "li"
     local = "lo"
     tamien_sanjose = "tasj"
+
+    def __str__(self):
+        return self.name.replace('_', ' ').title()
 
 
 class UnexpectedGTFSLayoutError(Exception):
@@ -103,7 +108,7 @@ class Caltrain(object):
         self.stations = {}
         self._unambiguous_stations = {}
         self._service_windows = {}
-        self._fairs = {}
+        self._fares = {}
 
         self.load_from_gtfs(gtfs_path)
 
@@ -117,7 +122,7 @@ class Caltrain(object):
         z = ZipFile(gtfs_path)
 
         self.trips, self.stations = {}, {}
-        self._service_windows, self._fairs = {}, {}
+        self._service_windows, self._fares = {}, {}
 
         # Attempt to get the version data.
         folders = set(f.split('/')[0] for f in z.namelist())
@@ -130,21 +135,21 @@ class Caltrain(object):
         # 1. Record fare data
         # -------------------
 
-        fair_lookup = {}
+        fare_lookup = {}
 
         # Create a map if (start, dest) -> price
         with z.open(self.version + '/fare_attributes.txt', 'rU') as csvfile:
-            fair_reader = csv.DictReader(TextIOWrapper(csvfile))
-            for r in fair_reader:
-                fair_lookup[r['fare_id']] = \
+            fare_reader = csv.DictReader(TextIOWrapper(csvfile))
+            for r in fare_reader:
+                fare_lookup[r['fare_id']] = \
                     tuple(int(x) for x in r['price'].split('.'))
 
         # Read in the fare IDs from station X to station Y.
         with z.open(self.version + '/fare_rules.txt', 'rU') as csvfile:
-            fair_reader = csv.DictReader(TextIOWrapper(csvfile))
-            for r in fair_reader:
+            fare_reader = csv.DictReader(TextIOWrapper(csvfile))
+            for r in fare_reader:
                 k = (int(r['origin_id']), int(r['destination_id']))
-                self._fairs[k] = fair_lookup[r['fare_id']]
+                self._fares[k] = fare_lookup[r['fare_id']]
 
         # ------------------------
         # 2. Record calendar dates
@@ -232,10 +237,10 @@ class Caltrain(object):
         else:
             raise UnknownStationError(name)
 
-    def fair_between(self, a, b):
+    def fare_between(self, a, b):
         a = self.get_station(a) if not isinstance(a, Station) else a
         b = self.get_station(b) if not isinstance(b, Station) else b
-        return self._fairs[(a.zone, b.zone)]
+        return self._fares[(a.zone, b.zone)]
 
     def next_trip(self, a, b, after=datetime.now()):
 
