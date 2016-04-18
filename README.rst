@@ -47,7 +47,7 @@ Let's find the next train from Sunnyvale to San Francisco 4th and King.
 
     >> from python_caltrain import Caltrain
     >> c = Caltrain()
-    >> n = c.next_trips('sunnyvale', 'sf)[0]
+    >> n = c.next_trips('sunnyvale', 'sf')[0]
     >> n.departure
     datetime.time(11, 26)
     >> n.arrival
