@@ -106,7 +106,8 @@ _STATIONS_RE = re.compile(r'^(.+) Caltrain( Station)?$')
 
 _RENAME_MAP = {
     'SO. SAN FRANCISCO': 'SOUTH SAN FRANCISCO',
-    'MT VIEW': 'MOUNTAIN VIEW'
+    'MT VIEW': 'MOUNTAIN VIEW',
+    'CALIFORNIA AVE': 'CALIFORNIA AVENUE'
 }
 
 _DEFAULT_GTFS_FILE = 'data/caltrain_gtfs_latest.zip'
@@ -118,7 +119,16 @@ _ALIAS_MAP_RAW = {
                             'SO SAN FRANCISCO', 'SO SAN FRAN'),
     '22ND ST': ('TWENTY-SECOND STREET', 'TWENTY-SECOND ST',
                 '22ND STREET', '22ND', 'TWENTY-SECOND', '22'),
-    'MOUNTAIN VIEW': 'MT VIEW'
+    'MOUNTAIN VIEW': 'MT VIEW',
+    'CALIFORNIA AVENUE': ('CAL AVE', 'CALIFORNIA', 'CALIFORNIA AVE',
+                          'CAL', 'CAL AV', 'CALIFORNIA AV'),
+    'REDWOOD CITY': 'REDWOOD',
+    'SAN JOSE DIRIDON': 'DIRIDON',
+    'COLLEGE PARK': 'COLLEGE',
+    'BLOSSOM HILL': 'BLOSSOM',
+    'MORGAN HILL': 'MORGAN',
+    'HAYWARD PARK': 'HAYWARD',
+    'MENLO PARK': 'MENLO'
 }
 
 _ALIAS_MAP = {}
