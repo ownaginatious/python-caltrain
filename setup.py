@@ -5,14 +5,14 @@ from io import open
 setup(
     name='python-caltrain',
     packages=find_packages(exclude=["tests"]),
-    version='2016.4.3',
+    version='2016.4.4',
     description='A library for working with raw Caltrain scheduling'
                 'data in Python',
     author='Dillon Dixon',
     author_email='dillondixon@gmail.com',
     url='https://github.com/ownaginatious/python-caltrain',
     download_url='https://github.com/ownaginatious/python-caltrain'
-                 '/tarball/2016.4.3',
+                 '/tarball/2016.4.4',
     license='MIT',
     keywords=['caltrain', 'python'],
     zip_safe=True,
