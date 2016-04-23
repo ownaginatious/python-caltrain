@@ -1,11 +1,13 @@
 #! /usr/bin/env python
 from setuptools import setup, find_packages
 from io import open
+import versioneer
 
 setup(
     name='python-caltrain',
     packages=find_packages(exclude=["tests"]),
-    version='2016.4.5',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description='A library for working with raw Caltrain scheduling'
                 'data in Python',
     author='Dillon Dixon',
