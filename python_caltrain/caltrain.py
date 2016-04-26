@@ -180,16 +180,12 @@ class Caltrain(object):
 
     def load_from_gtfs(self, gtfs_path=None):
         """
-        Resolves the duration between two times. Departure/arrival
-        times that exceed 24 hours or cross a day boundary are correctly
-        resolved.
+        Loads a GTFS zip file and builds the data model from it.
+        If not specified, the internally stored GTFS zip file from
+        Caltrain is used instead.
 
-        :param start: the time to resolve
-        :type start: Stop
-        :param end: the time to resolve
-        :type end: Stop
-
-        :returns: tuple of days and datetime.time
+        :param gtfs_path: the path of the GTFS zip file to load
+        :type gtfs_path: str or unicode
         """
         # Use the default path if not specified.
         if gtfs_path is None:
@@ -344,7 +340,7 @@ class Caltrain(object):
         """
         Returns a list of possible trips to get from stations a to b
         following the after date. These are ordered from soonest to
-        latest and terminate at the end of the Caltrain's "service day".
+        latest and terminate at the end of the Caltrain's 'service day'.
 
         :param a: the starting station
         :type a: str or unicode or Station
