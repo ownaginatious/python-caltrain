@@ -1,4 +1,4 @@
-from .caltrain import Caltrain
+from .caltrain import Caltrain, UnknownStationError, UnexpectedGTFSLayoutError
 
 from ._version import get_versions
 __version__ = get_versions()['version']
