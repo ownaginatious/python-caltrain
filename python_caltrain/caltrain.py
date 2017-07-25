@@ -197,13 +197,6 @@ class Caltrain(object):
         self.trains, self.stations = {}, {}
         self._service_windows, self._fares = {}, {}
 
-        # Attempt to get the version data.
-        folders = set(f.split('/')[0] for f in z.namelist())
-        if len(folders) > 1:
-            raise UnexpectedGTFSLayoutError(
-                'Multiple top-level dirs: %s' % str(folders))
-        self.version = list(folders)[0]
-
         # -------------------
         # 1. Record fare data
         # -------------------
@@ -211,14 +204,14 @@ class Caltrain(object):
         fare_lookup = {}
 
         # Create a map if (start, dest) -> price
-        with z.open(self.version + '/fare_attributes.txt', 'rU') as csvfile:
+        with z.open('fare_attributes.txt', 'r') as csvfile:
             fare_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in fare_reader:
                 fare_lookup[r['fare_id']] = \
                     tuple(int(x) for x in r['price'].split('.'))
 
         # Read in the fare IDs from station X to station Y.
-        with z.open(self.version + '/fare_rules.txt', 'rU') as csvfile:
+        with z.open('fare_rules.txt', 'r') as csvfile:
             fare_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in fare_reader:
                 k = (int(r['origin_id']), int(r['destination_id']))
@@ -229,7 +222,7 @@ class Caltrain(object):
         # ------------------------
 
         # Record the days when certain trains are active.
-        with z.open(self.version + '/calendar.txt', 'rU') as csvfile:
+        with z.open('calendar.txt', 'r') as csvfile:
             calendar_reader = csv.reader(TextIOWrapper(csvfile))
             next(calendar_reader)
             for r in calendar_reader:
@@ -242,7 +235,7 @@ class Caltrain(object):
         # ------------------
         # 3. Record stations
         # ------------------
-        with z.open(self.version + '/stops.txt', 'rU') as csvfile:
+        with z.open('stops.txt', 'r') as csvfile:
             trip_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in trip_reader:
                 # Non-numeric stop IDs are useless information as
@@ -259,35 +252,35 @@ class Caltrain(object):
         # ---------------------------
         # 4. Record train definitions
         # ---------------------------
-        with z.open(self.version + '/trips.txt', 'rU') as csvfile:
+        with z.open('trips.txt', 'r') as csvfile:
             train_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in train_reader:
                 train_dir = int(r['direction_id'])
                 transit_type = TransitType(r['route_id'].lower()
                                            .split('-')[0].strip())
                 self.trains[r['trip_id']] = Train(
-                    name=r['trip_id'],
+                    name=r['trip_short_name'],
                     kind=transit_type,
                     direction=Direction(train_dir),
                     stops={},
                     service_window=self._service_windows[r['service_id']]
                 )
 
-        self.stations = dict((k,
-                             Station(v['name'], v['zone']))
-                             for k, v in self.stations.items())
+        self.stations = dict(
+            (k, Station(v['name'], v['zone']))
+            for k, v in self.stations.items())
 
         # -----------------------
         # 5. Record trip stations
         # -----------------------
-        with z.open(self.version + '/stop_times.txt', 'rU') as csvfile:
+        with z.open('stop_times.txt', 'r') as csvfile:
             stop_times_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in stop_times_reader:
                 stop_id = r['stop_id']
                 train = self.trains[r['trip_id']]
                 arrival_day, arrival = _resolve_time(r['arrival_time'])
                 departure_day, departure = _resolve_time(r['departure_time'])
-                train.stops[self.stations[r['stop_id']]] =\
+                train.stops[self.stations[stop_id]] =\
                     Stop(arrival=arrival, arrival_day=arrival_day,
                          departure=departure, departure_day=departure_day,
                          stop_number=int(r['stop_sequence']))
@@ -336,7 +329,7 @@ class Caltrain(object):
         b = self.get_station(b) if not isinstance(b, Station) else b
         return self._fares[(a.zone, b.zone)]
 
-    def next_trips(self, a, b, after=datetime.now()):
+    def next_trips(self, a, b, after=None):
         """
         Returns a list of possible trips to get from stations a to b
         following the after date. These are ordered from soonest to
@@ -352,6 +345,10 @@ class Caltrain(object):
 
         :returns: a list of possible trips
         """
+
+        if after is None:
+            after = datetime.now()
+
         a = self.get_station(a) if not isinstance(a, Station) else a
         b = self.get_station(b) if not isinstance(b, Station) else b
 
