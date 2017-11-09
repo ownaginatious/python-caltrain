@@ -1,6 +1,8 @@
 python-caltrain
 ===============
 
+|PyPI Version|
+
 A library for working with raw Bay Area Caltrain scheduling data in
 Python.
 
@@ -115,3 +117,6 @@ For example, ``sf``, ``sanfrancisco``, ``san fran``,
 ``san francisco station`` are all understood as the same station. Same
 with ``22nd``, ``Twenty-Second``, ``twenty second street``, and
 ``22nd str``.
+
+.. |PyPI Version| image:: https://badge.fury.io/py/python-caltrain.svg
+    :target: https://badge.fury.io/py/python-caltrain
