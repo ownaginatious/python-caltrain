@@ -8,8 +8,8 @@ setup(
     packages=find_packages(exclude=["tests"]),
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description='A library for working with raw Caltrain scheduling'
-                'data in Python',
+    description='A library for working with raw Caltrain scheduling data in Python',
+    long_description=open('README.rst').read(),
     author='Dillon Dixon',
     author_email='dillondixon@gmail.com',
     url='https://github.com/ownaginatious/python-caltrain',
