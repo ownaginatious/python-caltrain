@@ -4,23 +4,21 @@
 from __future__ import unicode_literals
 
 import csv
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from datetime import datetime, timedelta
-import os
 import pkg_resources
 import re
-import sys
 from zipfile import ZipFile
 from enum import Enum, unique
 from io import TextIOWrapper
 
 Train = namedtuple('Train', ['name', 'kind', 'direction',
-                             'stops', 'service_window'])
+                             'stops', 'service_windows'])
 Station = namedtuple('Station', ['name', 'zone'])
 Stop = namedtuple('Stop', ['arrival', 'arrival_day',
                            'departure', 'departure_day',
                            'stop_number'])
-ServiceWindow = namedtuple('ServiceWindow', ['start', 'end', 'days'])
+ServiceWindow = namedtuple('ServiceWindow', ['name', 'start', 'end', 'days', 'holiday', 'event'])
 
 _BASE_DATE = datetime(1970, 1, 1, 0, 0, 0, 0)
 
@@ -148,10 +146,25 @@ class Direction(Enum):
 
 @unique
 class TransitType(Enum):
-    baby_bullet = "bu"
-    limited = "li"
-    local = "lo"
-    tamien_sanjose = "tasj"
+    shuttle = 0
+    local = 1
+    limited = 2
+    baby_bullet = 3
+    weekend_game_train = 4
+
+    @staticmethod
+    def from_trip_id(trip_id):
+        if trip_id[0] == 's':
+            return TransitType.shuttle
+        if trip_id[0] in ('3', '8'):
+            return TransitType.baby_bullet
+        if trip_id[0] in ('1', '4'):
+            return TransitType.local
+        if trip_id[0] == '2':
+            return TransitType.limited
+        if trip_id[0] == '6':
+            return TransitType.weekend_game_train
+        raise ValueError('unable to derive transit type from trip ID: {}'.format(trip_id))
 
     def __str__(self):
         return self.name.replace('_', ' ').title()
@@ -195,7 +208,7 @@ class Caltrain(object):
         z = ZipFile(gtfs_path)
 
         self.trains, self.stations = {}, {}
-        self._service_windows, self._fares = {}, {}
+        self._service_windows, self._fares = defaultdict(list), {}
 
         # -------------------
         # 1. Record fare data
@@ -214,6 +227,8 @@ class Caltrain(object):
         with z.open('fare_rules.txt', 'r') as csvfile:
             fare_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in fare_reader:
+                if r['origin_id'] == '' or r['destination_id'] == '':
+                    continue
                 k = (int(r['origin_id']), int(r['destination_id']))
                 self._fares[k] = fare_lookup[r['fare_id']]
 
@@ -224,13 +239,31 @@ class Caltrain(object):
         # Record the days when certain trains are active.
         with z.open('calendar.txt', 'r') as csvfile:
             calendar_reader = csv.reader(TextIOWrapper(csvfile))
-            next(calendar_reader)
+            next(calendar_reader)  # skip the header
             for r in calendar_reader:
-                self._service_windows[r[0]] = ServiceWindow(
+                self._service_windows[r[0]].insert(0, ServiceWindow(
+                    name=r[1],
                     start=datetime.strptime(r[-2], '%Y%m%d').date(),
                     end=datetime.strptime(r[-1], '%Y%m%d').date(),
-                    days=set(i for i, j in enumerate(r[1:8]) if int(j) == 1)
-                )
+                    days=set(i for i, j in enumerate(r[2:8]) if int(j) == 1),
+                    holiday=False,
+                    event=False,
+                ))
+
+        # Find special events/holiday windows where trains are active.
+        with z.open('calendar_dates.txt', 'r') as csvfile:
+            calendar_reader = csv.reader(TextIOWrapper(csvfile))
+            next(calendar_reader)  # skip the header
+            for r in calendar_reader:
+                when = datetime.strptime(r[1], '%Y%m%d').date()
+                self._service_windows[r[0]].insert(0, ServiceWindow(
+                    name=r[2],
+                    start=when,
+                    end=when,
+                    days={when.weekday()},
+                    event=r[-1] == '1',
+                    holiday=r[-1] == '2',
+                ))
 
         # ------------------
         # 3. Record stations
@@ -238,15 +271,14 @@ class Caltrain(object):
         with z.open('stops.txt', 'r') as csvfile:
             trip_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in trip_reader:
-                # Non-numeric stop IDs are useless information as
-                # can be observed and should therefore be skipped.
+                # From observation, non-numeric stop IDs are useless information
+                # that should be skipped.
                 if not r['stop_id'].isdigit():
                     continue
-                stop_name = _STATIONS_RE.match(r['stop_name'])\
-                    .group(1).strip().upper()
+                stop_name = _STATIONS_RE.match(r['stop_name']).group(1).strip().upper()
                 self.stations[r['stop_id']] = {
                     'name': _RENAME_MAP.get(stop_name, stop_name).title(),
-                    'zone': int(r['zone_id'])
+                    'zone': int(r['zone_id']) if r['zone_id'] else -1
                 }
 
         # ---------------------------
@@ -256,14 +288,14 @@ class Caltrain(object):
             train_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in train_reader:
                 train_dir = int(r['direction_id'])
-                transit_type = TransitType(r['route_id'].lower()
-                                           .split('-')[0].strip())
+                transit_type = TransitType.from_trip_id(r['trip_id'])
+                service_windows = self._service_windows[r['service_id']]
                 self.trains[r['trip_id']] = Train(
                     name=r['trip_short_name'],
                     kind=transit_type,
                     direction=Direction(train_dir),
                     stops={},
-                    service_window=self._service_windows[r['service_id']]
+                    service_windows=service_windows
                 )
 
         self.stations = dict(
@@ -356,32 +388,38 @@ class Caltrain(object):
 
         for name, train in self.trains.items():
 
-            sw = train.service_window
+            # Find a service window.
+            for sw in train.service_windows:
+                in_time_window = sw.start <= after.date() <= sw.end and after.weekday() in sw.days
 
-            # Check to see if the train's stops contains our stations
-            # and is available.
-            if after.date() < sw.start or after.date() > sw.end or \
-               after.weekday() not in sw.days or \
-               a not in train.stops or b not in train.stops:
-                continue
+                if (
+                    not in_time_window or
+                    a not in train.stops or b not in train.stops
+                ):
+                    continue
 
-            stop_a = train.stops[a]
-            stop_b = train.stops[b]
+                stop_a = train.stops[a]
+                stop_b = train.stops[b]
 
-            # Check to make sure this train is headed in the right direction.
-            if stop_a.stop_number > stop_b.stop_number:
-                continue
+                # Check to make sure this train is headed in the right direction.
+                if stop_a.stop_number > stop_b.stop_number:
+                    continue
 
-            # Check to make sure this train has not left yet.
-            if stop_a.departure < after.time():
-                continue
+                # Check to make sure this train has not left yet.
+                if stop_a.departure < after.time():
+                    continue
 
-            possibilities += [Trip(
-                                departure=stop_a.departure,
-                                arrival=stop_b.arrival,
-                                duration=_resolve_duration(stop_a, stop_b),
-                                train=train
-                              )]
+                possibilities.append(
+                    Trip(
+                        departure=stop_a.departure,
+                        arrival=stop_b.arrival,
+                        duration=_resolve_duration(stop_a, stop_b),
+                        train=train
+                    ))
+
+                if in_time_window and sw.holiday:
+                    # If it's a holiday, it replaces the normal schedule.
+                    break
 
         possibilities.sort(key=lambda x: x.departure)
         return possibilities
