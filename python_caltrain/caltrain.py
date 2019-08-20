@@ -121,7 +121,7 @@ _ALIAS_MAP_RAW = {
     'CALIFORNIA AVENUE': ('CAL AVE', 'CALIFORNIA', 'CALIFORNIA AVE',
                           'CAL', 'CAL AV', 'CALIFORNIA AV'),
     'REDWOOD CITY': 'REDWOOD',
-    'SAN JOSE DIRIDON': ('DIRIDON', 'SAN JOSE'),
+    'SAN JOSE DIRIDON': ('DIRIDON', 'SAN JOSE', 'SJ DIRIDON', 'SJ'),
     'COLLEGE PARK': 'COLLEGE',
     'BLOSSOM HILL': 'BLOSSOM',
     'MORGAN HILL': 'MORGAN',
@@ -188,6 +188,7 @@ class Caltrain(object):
         self._unambiguous_stations = {}
         self._service_windows = {}
         self._fares = {}
+        self.holidays = set()
 
         self.load_from_gtfs(gtfs_path)
 
@@ -207,7 +208,7 @@ class Caltrain(object):
 
         z = ZipFile(gtfs_path)
 
-        self.trains, self.stations = {}, {}
+        self.trains, self.stations, self.holidays = {}, {}, set()
         self._service_windows, self._fares = defaultdict(list), {}
 
         # -------------------
@@ -245,7 +246,7 @@ class Caltrain(object):
                     name=r[1],
                     start=datetime.strptime(r[-2], '%Y%m%d').date(),
                     end=datetime.strptime(r[-1], '%Y%m%d').date(),
-                    days=set(i for i, j in enumerate(r[2:8]) if int(j) == 1),
+                    days=set(i for i, j in enumerate(r[2:9]) if int(j) == 1),
                     holiday=False,
                     event=False,
                 ))
@@ -256,13 +257,16 @@ class Caltrain(object):
             next(calendar_reader)  # skip the header
             for r in calendar_reader:
                 when = datetime.strptime(r[1], '%Y%m%d').date()
+                holiday = r[-1] == '2'
+                if holiday:
+                    self.holidays.add(when)
                 self._service_windows[r[0]].insert(0, ServiceWindow(
                     name=r[2],
                     start=when,
                     end=when,
                     days={when.weekday()},
                     event=r[-1] == '1',
-                    holiday=r[-1] == '2',
+                    holiday=holiday,
                 ))
 
         # ------------------
@@ -388,14 +392,18 @@ class Caltrain(object):
 
         for name, train in self.trains.items():
 
-            # Find a service window.
             for sw in train.service_windows:
-                in_time_window = sw.start <= after.date() <= sw.end and after.weekday() in sw.days
 
-                if (
-                    not in_time_window or
-                    a not in train.stops or b not in train.stops
-                ):
+                # Holiday schedules are mutually exclusive with regular schedules.
+                if sw.holiday ^ (after.date() not in self.holidays):
+                    continue
+
+                in_time_window = sw.start <= after.date() <= sw.end and after.weekday() in sw.days
+                stops_at_stations = a in train.stops and b in train.stops
+
+                if in_time_window and not stops_at_stations and sw.holiday:
+                    break
+                elif not in_time_window or not stops_at_stations:
                     continue
 
                 stop_a = train.stops[a]
@@ -416,10 +424,6 @@ class Caltrain(object):
                         duration=_resolve_duration(stop_a, stop_b),
                         train=train
                     ))
-
-                if in_time_window and sw.holiday:
-                    # If it's a holiday, it replaces the normal schedule.
-                    break
 
         possibilities.sort(key=lambda x: x.departure)
         return possibilities
