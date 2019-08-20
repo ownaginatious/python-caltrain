@@ -1,0 +1,6 @@
+[run]
+branch = True
+omit =
+  python_caltrain/_version.py
+source =
+  python_caltrain

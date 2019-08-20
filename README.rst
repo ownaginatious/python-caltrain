@@ -1,7 +1,7 @@
 python-caltrain
 ===============
 
-|PyPI Version|
+|PyPI Version| |Python Versions| |Coverage| |Build Status|
 
 A library for working with raw Bay Area Caltrain scheduling data in
 Python.
@@ -96,7 +96,7 @@ How much is this trip going to cost?
     >> c.fare_between('sunnyvale', 'san francisco')
     (7, 75)
 
-Damn, that's expensive...
+My goodness, that's quite expensive...
 
 What if I want to know the next train after some point in the past or
 future?
@@ -120,3 +120,12 @@ with ``22nd``, ``Twenty-Second``, ``twenty second street``, and
 
 .. |PyPI Version| image:: https://badge.fury.io/py/python-caltrain.svg
     :target: https://badge.fury.io/py/python-caltrain
+
+.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/mixpanel-jql.svg
+    :target: https://github.com/ownaginatious/python-caltrain/blob/master/setup.py
+
+.. |Build Status| image:: https://travis-ci.org/ownaginatious/python-caltrain.svg?branch=master
+    :target: https://travis-ci.org/ownaginatious/python-caltrain/
+
+.. |Coverage| image:: https://codecov.io/gh/ownaginatious/python-caltrain/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/ownaginatious/python-caltrain
