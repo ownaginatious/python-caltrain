@@ -18,7 +18,7 @@ Station = namedtuple('Station', ['name', 'zone'])
 Stop = namedtuple('Stop', ['arrival', 'arrival_day',
                            'departure', 'departure_day',
                            'stop_number'])
-ServiceWindow = namedtuple('ServiceWindow', ['name', 'start', 'end', 'days', 'holiday', 'event'])
+ServiceWindow = namedtuple('ServiceWindow', ['id', 'name', 'start', 'end', 'days', 'removed'])
 
 _BASE_DATE = datetime(1970, 1, 1, 0, 0, 0, 0)
 
@@ -242,13 +242,13 @@ class Caltrain(object):
             calendar_reader = csv.reader(TextIOWrapper(csvfile))
             next(calendar_reader)  # skip the header
             for r in calendar_reader:
-                self._service_windows[r[0]].insert(0, ServiceWindow(
+                self._service_windows[r[0]].append(ServiceWindow(
+                    id=r[0],
                     name=r[1],
                     start=datetime.strptime(r[-2], '%Y%m%d').date(),
                     end=datetime.strptime(r[-1], '%Y%m%d').date(),
                     days=set(i for i, j in enumerate(r[2:9]) if int(j) == 1),
-                    holiday=False,
-                    event=False,
+                    removed=False,
                 ))
 
         # Find special events/holiday windows where trains are active.
@@ -257,16 +257,13 @@ class Caltrain(object):
             next(calendar_reader)  # skip the header
             for r in calendar_reader:
                 when = datetime.strptime(r[1], '%Y%m%d').date()
-                holiday = r[-1] == '2'
-                if holiday:
-                    self.holidays.add(when)
                 self._service_windows[r[0]].insert(0, ServiceWindow(
-                    name=r[2],
+                    id=r[0],
+                    name=r[1],
                     start=when,
                     end=when,
                     days={when.weekday()},
-                    event=r[-1] == '1',
-                    holiday=holiday,
+                    removed=r[-1] == '2',
                 ))
 
         # ------------------
@@ -392,18 +389,17 @@ class Caltrain(object):
 
         for name, train in self.trains.items():
 
+            should_skip = set()
+
             for sw in train.service_windows:
-
-                # Holiday schedules are mutually exclusive with regular schedules.
-                if sw.holiday ^ (after.date() not in self.holidays):
-                    continue
-
                 in_time_window = sw.start <= after.date() <= sw.end and after.weekday() in sw.days
                 stops_at_stations = a in train.stops and b in train.stops
 
-                if in_time_window and not stops_at_stations and sw.holiday:
-                    break
-                elif not in_time_window or not stops_at_stations:
+                if not in_time_window or not stops_at_stations or sw.id in should_skip:
+                    continue
+
+                if sw.removed:
+                    should_skip.add(sw.id)
                     continue
 
                 stop_a = train.stops[a]
