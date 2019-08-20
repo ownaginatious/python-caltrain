@@ -188,7 +188,6 @@ class Caltrain(object):
         self._unambiguous_stations = {}
         self._service_windows = {}
         self._fares = {}
-        self.holidays = set()
 
         self.load_from_gtfs(gtfs_path)
 
@@ -208,7 +207,7 @@ class Caltrain(object):
 
         z = ZipFile(gtfs_path)
 
-        self.trains, self.stations, self.holidays = {}, {}, set()
+        self.trains, self.stations = {}, {}
         self._service_windows, self._fares = defaultdict(list), {}
 
         # -------------------

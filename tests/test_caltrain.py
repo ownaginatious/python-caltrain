@@ -8,7 +8,7 @@ import unittest
 from python_caltrain import Caltrain, TransitType
 
 
-class TestCaltrain(unittest.TestCase):
+class TestNextTrain(unittest.TestCase):
 
     def test_expected_next_train_week_day(self):
         c = Caltrain()
@@ -84,3 +84,13 @@ class TestCaltrain(unittest.TestCase):
         self.assertEqual(datetime.timedelta(hours=1, minutes=9), next_trips[1].duration)
         self.assertEqual(TransitType.baby_bullet, next_trips[1].train.kind)
         self.assertEqual('801', next_trips[1].train.name)
+
+
+class TestFare(unittest.TestCase):
+
+    def test_expected_cost(self):
+        c = Caltrain()
+        self.assertEqual((3, 75), c.fare_between('sunnyvale', 'sunnyvale'))
+        self.assertEqual((6, 0), c.fare_between('sunnyvale', 'lawrence'))
+        self.assertEqual((8, 25), c.fare_between('sunnyvale', 'capitol'))
+        self.assertEqual((10, 50), c.fare_between('sunnyvale', 'gilroy'))
