@@ -1,0 +1,18 @@
+language: python
+python:
+  - "2.7"
+  - "3.5"
+  - "3.6"
+  - "3.7"
+# command to install dependencies
+install:
+  - python ./setup.py install
+  - pip install coverage codecov
+
+# command to run tests
+script:
+  - coverage run ./setup.py test
+
+after_success:
+  - codecov
+
