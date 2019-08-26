@@ -1,7 +1,4 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-from __future__ import unicode_literals
 
 import csv
 from collections import defaultdict, namedtuple
@@ -26,18 +23,21 @@ _BASE_DATE = datetime(1970, 1, 1, 0, 0, 0, 0)
 class Trip(namedtuple('Trip', ['departure', 'arrival', 'duration', 'train'])):
 
     def __str__(self):
-        return "[%s %s] Departs: %s, Arrives: %s (%s)" % \
-                (str(self.train.kind), self.train.name, str(self.departure),
-                 str(self.arrival), str(self.duration))
+        return "[{kind} {name}] Departs: {departs}, Arrives: {arrives} ({duration})".format(
+                kind=self.train.kind, name=self.train.name, departs=self.departure,
+                arrives=self.arrival, duration=self.duration)
+
 
     def __unicode__(self):
         return unicode(self.__str__())
 
     def __repr__(self):
-        return "Trip(departure=%s, arrival=%s, duration=%s, " \
-               "train=Train(name=%s))" % \
-                (repr(self.departure), repr(self.arrival),
-                 repr(self.duration), self.train.name)
+        return "Trip(departure={departure}, arrival={arrival}, duration={duration}, " \
+               "train=Train(name={train}))".format(
+                departure=repr(self.departure),
+                arrival=repr(self.arrival),
+                duration=repr(self.duration),
+                train=self.train.name)
 
 
 def _sanitize_name(name):
