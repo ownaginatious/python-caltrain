@@ -10,16 +10,6 @@ with open(
     exec(f.read(), captured)
     version = captured["__version__"]
 
-
-def requirements():
-    return (
-        [
-            line.strip()
-            for line in open("requirements.txt", "r", encoding="utf-8").readlines()
-        ],
-    )
-
-
 setup(
     name="python-caltrain",
     packages=find_packages(exclude=["tests"]),
@@ -35,11 +25,10 @@ setup(
     exclude_package_data={"": ["README.rst", "LICENSE"]},
     classifiers=[
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
-    install_requires=requirements(),
     test_suite="tests",
 )

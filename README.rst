@@ -121,7 +121,7 @@ with ``22nd``, ``Twenty-Second``, ``twenty second street``, and
 .. |PyPI Version| image:: https://badge.fury.io/py/python-caltrain.svg
     :target: https://badge.fury.io/py/python-caltrain
 
-.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/mixpanel-jql.svg
+.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/python-caltrain.svg
     :target: https://github.com/ownaginatious/python-caltrain/blob/master/setup.py
 
 .. |Build Status| image:: https://travis-ci.org/ownaginatious/python-caltrain.svg?branch=master
