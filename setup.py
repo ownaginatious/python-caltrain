@@ -1,32 +1,45 @@
-#! /usr/bin/env python
 from setuptools import setup, find_packages
 from io import open
-import versioneer
+import os
+
+here = os.path.abspath(os.path.dirname(__file__))
+with open(
+    os.path.join(here, "python_caltrain", "__version__.py"), "r", encoding="utf-8"
+) as f:
+    captured = {}
+    exec(f.read(), captured)
+    version = captured["__version__"]
+
+
+def requirements():
+    return (
+        [
+            line.strip()
+            for line in open("requirements.txt", "r", encoding="utf-8").readlines()
+        ],
+    )
+
 
 setup(
-    name='python-caltrain',
+    name="python-caltrain",
     packages=find_packages(exclude=["tests"]),
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
-    description='A library for working with raw Caltrain scheduling'
-                'data in Python',
-    author='Dillon Dixon',
-    author_email='dillondixon@gmail.com',
-    url='https://github.com/ownaginatious/python-caltrain',
-    license='MIT',
-    keywords=['caltrain', 'python'],
+    version=version,
+    description="A library for working with raw Caltrain scheduling" "data in Python",
+    author="Dillon Dixon",
+    author_email="dillondixon@gmail.com",
+    url="https://github.com/ownaginatious/python-caltrain",
+    license="MIT",
+    keywords=["caltrain", "python"],
     zip_safe=True,
     include_package_data=True,
-    exclude_package_data={'': ['README.rst', 'LICENSE']},
+    exclude_package_data={"": ["README.rst", "LICENSE"]},
     classifiers=[
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7'
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ],
-    install_requires=[line.strip()
-                      for line in open("requirements.txt", "r",
-                                       encoding="utf-8").readlines()],
-    test_suite="tests"
+    install_requires=requirements(),
+    test_suite="tests",
 )
