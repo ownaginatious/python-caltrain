@@ -233,7 +233,7 @@ class Caltrain(object):
         if gtfs_path is None:
             gtfs_handle = pkg_resources.resource_stream(__name__, _DEFAULT_GTFS_FILE)
         else:
-            gtfs_handle = open(gtfs_path, 'rb')
+            gtfs_handle = open(gtfs_path, "rb")
 
         with gtfs_handle as f:
             self._load_from_gtfs(f)
