@@ -12,7 +12,7 @@ install:
 
 # command to run tests
 script:
-  - if (( $(echo "$TRAVIS_PYTHON_VERSION > 3.5" | bc -l) )); then black --check ./setup.py ./python_caltrain; fi
+  - if (( $(echo "$TRAVIS_PYTHON_VERSION > 3.5" | bc -l) )); then black --check ./tests ./setup.py ./python_caltrain; fi
   - coverage run ./setup.py test
 
 after_success:
