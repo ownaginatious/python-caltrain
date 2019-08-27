@@ -231,9 +231,15 @@ class Caltrain(object):
         """
         # Use the default path if not specified.
         if gtfs_path is None:
-            gtfs_path = pkg_resources.resource_stream(__name__, _DEFAULT_GTFS_FILE)
+            gtfs_handle = pkg_resources.resource_stream(__name__, _DEFAULT_GTFS_FILE)
+        else:
+            gtfs_handle = open(gtfs_path, "rb")
 
-        z = ZipFile(gtfs_path)
+        with gtfs_handle as f:
+            self._load_from_gtfs(f)
+
+    def _load_from_gtfs(self, handle):
+        z = ZipFile(handle)
 
         self.trains, self.stations = {}, {}
         self._service_windows, self._fares = defaultdict(list), {}
