@@ -10,11 +10,18 @@ with open(
     exec(f.read(), captured)
     version = captured["__version__"]
 
+
+def get_long_description():
+    with open("README.rst") as f:
+        return f.read()
+
+
 setup(
     name="python-caltrain",
     packages=find_packages(exclude=["tests"]),
     version=version,
-    description="A library for working with raw Caltrain scheduling" "data in Python",
+    description="A library for working with raw Caltrain scheduling data in Python",
+    long_description=get_long_description(),
     author="Dillon Dixon",
     author_email="dillondixon@gmail.com",
     url="https://github.com/ownaginatious/python-caltrain",
