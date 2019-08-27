@@ -9,35 +9,41 @@ from zipfile import ZipFile
 from enum import Enum, unique
 from io import TextIOWrapper
 
-Train = namedtuple('Train', ['name', 'kind', 'direction',
-                             'stops', 'service_windows'])
-Station = namedtuple('Station', ['name', 'zone'])
-Stop = namedtuple('Stop', ['arrival', 'arrival_day',
-                           'departure', 'departure_day',
-                           'stop_number'])
-ServiceWindow = namedtuple('ServiceWindow', ['id', 'name', 'start', 'end', 'days', 'removed'])
+Train = namedtuple("Train", ["name", "kind", "direction", "stops", "service_windows"])
+Station = namedtuple("Station", ["name", "zone"])
+Stop = namedtuple(
+    "Stop", ["arrival", "arrival_day", "departure", "departure_day", "stop_number"]
+)
+ServiceWindow = namedtuple(
+    "ServiceWindow", ["id", "name", "start", "end", "days", "removed"]
+)
 
 _BASE_DATE = datetime(1970, 1, 1, 0, 0, 0, 0)
 
 
-class Trip(namedtuple('Trip', ['departure', 'arrival', 'duration', 'train'])):
-
+class Trip(namedtuple("Trip", ["departure", "arrival", "duration", "train"])):
     def __str__(self):
         return "[{kind} {name}] Departs: {departs}, Arrives: {arrives} ({duration})".format(
-                kind=self.train.kind, name=self.train.name, departs=self.departure,
-                arrives=self.arrival, duration=self.duration)
-
+            kind=self.train.kind,
+            name=self.train.name,
+            departs=self.departure,
+            arrives=self.arrival,
+            duration=self.duration,
+        )
 
     def __unicode__(self):
         return unicode(self.__str__())
 
     def __repr__(self):
-        return "Trip(departure={departure}, arrival={arrival}, duration={duration}, " \
-               "train=Train(name={train}))".format(
+        return (
+            "Trip(departure={departure}, arrival={arrival}, duration={duration}, "
+            "train=Train(name={train}))".format(
                 departure=repr(self.departure),
                 arrival=repr(self.arrival),
                 duration=repr(self.duration),
-                train=self.train.name)
+                train=self.train.name,
+            )
+        )
 
 
 def _sanitize_name(name):
@@ -50,8 +56,9 @@ def _sanitize_name(name):
 
     :returns: sanitized station name
     """
-    return ''.join(re.split('[^A-Za-z0-9]', name)).lower()\
-             .replace('station', '').strip()
+    return (
+        "".join(re.split("[^A-Za-z0-9]", name)).lower().replace("station", "").strip()
+    )
 
 
 def _resolve_time(t):
@@ -70,9 +77,7 @@ def _resolve_time(t):
     """
     hour, minute, second = [int(x) for x in t.split(":")]
     day, hour = divmod(hour, 24)
-    r = _BASE_DATE + timedelta(hours=hour,
-                               minutes=minute,
-                               seconds=second)
+    r = _BASE_DATE + timedelta(hours=hour, minutes=minute, seconds=second)
     return day, r.time()
 
 
@@ -89,44 +94,67 @@ def _resolve_duration(start, end):
 
     :returns: tuple of days and datetime.time
     """
-    start_time = _BASE_DATE + timedelta(hours=start.departure.hour,
-                                        minutes=start.departure.minute,
-                                        seconds=start.departure.second,
-                                        days=start.departure_day)
-    end_time = _BASE_DATE + timedelta(hours=end.arrival.hour,
-                                      minutes=end.arrival.minute,
-                                      seconds=end.arrival.second,
-                                      days=end.departure_day)
+    start_time = _BASE_DATE + timedelta(
+        hours=start.departure.hour,
+        minutes=start.departure.minute,
+        seconds=start.departure.second,
+        days=start.departure_day,
+    )
+    end_time = _BASE_DATE + timedelta(
+        hours=end.arrival.hour,
+        minutes=end.arrival.minute,
+        seconds=end.arrival.second,
+        days=end.departure_day,
+    )
     return end_time - start_time
 
 
-_STATIONS_RE = re.compile(r'^(.+) Caltrain( Station)?$')
+_STATIONS_RE = re.compile(r"^(.+) Caltrain( Station)?$")
 
 _RENAME_MAP = {
-    'SO. SAN FRANCISCO': 'SOUTH SAN FRANCISCO',
-    'MT VIEW': 'MOUNTAIN VIEW',
-    'CALIFORNIA AVE': 'CALIFORNIA AVENUE'
+    "SO. SAN FRANCISCO": "SOUTH SAN FRANCISCO",
+    "MT VIEW": "MOUNTAIN VIEW",
+    "CALIFORNIA AVE": "CALIFORNIA AVENUE",
 }
 
-_DEFAULT_GTFS_FILE = 'data/caltrain_gtfs_latest.zip'
+_DEFAULT_GTFS_FILE = "data/caltrain_gtfs_latest.zip"
 _ALIAS_MAP_RAW = {
-    'SAN FRANCISCO': ('SF', 'SAN FRAN'),
-    'SOUTH SAN FRANCISCO': ('S SAN FRANCISCO', 'SOUTH SF',
-                            'SOUTH SAN FRAN', 'S SAN FRAN',
-                            'S SAN FRANCISCO', 'S SF', 'SO SF',
-                            'SO SAN FRANCISCO', 'SO SAN FRAN'),
-    '22ND ST': ('TWENTY-SECOND STREET', 'TWENTY-SECOND ST',
-                '22ND STREET', '22ND', 'TWENTY-SECOND', '22'),
-    'MOUNTAIN VIEW': 'MT VIEW',
-    'CALIFORNIA AVENUE': ('CAL AVE', 'CALIFORNIA', 'CALIFORNIA AVE',
-                          'CAL', 'CAL AV', 'CALIFORNIA AV'),
-    'REDWOOD CITY': 'REDWOOD',
-    'SAN JOSE DIRIDON': ('DIRIDON', 'SAN JOSE', 'SJ DIRIDON', 'SJ'),
-    'COLLEGE PARK': 'COLLEGE',
-    'BLOSSOM HILL': 'BLOSSOM',
-    'MORGAN HILL': 'MORGAN',
-    'HAYWARD PARK': 'HAYWARD',
-    'MENLO PARK': 'MENLO'
+    "SAN FRANCISCO": ("SF", "SAN FRAN"),
+    "SOUTH SAN FRANCISCO": (
+        "S SAN FRANCISCO",
+        "SOUTH SF",
+        "SOUTH SAN FRAN",
+        "S SAN FRAN",
+        "S SAN FRANCISCO",
+        "S SF",
+        "SO SF",
+        "SO SAN FRANCISCO",
+        "SO SAN FRAN",
+    ),
+    "22ND ST": (
+        "TWENTY-SECOND STREET",
+        "TWENTY-SECOND ST",
+        "22ND STREET",
+        "22ND",
+        "TWENTY-SECOND",
+        "22",
+    ),
+    "MOUNTAIN VIEW": "MT VIEW",
+    "CALIFORNIA AVENUE": (
+        "CAL AVE",
+        "CALIFORNIA",
+        "CALIFORNIA AVE",
+        "CAL",
+        "CAL AV",
+        "CALIFORNIA AV",
+    ),
+    "REDWOOD CITY": "REDWOOD",
+    "SAN JOSE DIRIDON": ("DIRIDON", "SAN JOSE", "SJ DIRIDON", "SJ"),
+    "COLLEGE PARK": "COLLEGE",
+    "BLOSSOM HILL": "BLOSSOM",
+    "MORGAN HILL": "MORGAN",
+    "HAYWARD PARK": "HAYWARD",
+    "MENLO PARK": "MENLO",
 }
 
 _ALIAS_MAP = {}
@@ -154,20 +182,22 @@ class TransitType(Enum):
 
     @staticmethod
     def from_trip_id(trip_id):
-        if trip_id[0] == 's':
+        if trip_id[0] == "s":
             return TransitType.shuttle
-        if trip_id[0] in ('3', '8'):
+        if trip_id[0] in ("3", "8"):
             return TransitType.baby_bullet
-        if trip_id[0] in ('1', '4'):
+        if trip_id[0] in ("1", "4"):
             return TransitType.local
-        if trip_id[0] == '2':
+        if trip_id[0] == "2":
             return TransitType.limited
-        if trip_id[0] == '6':
+        if trip_id[0] == "6":
             return TransitType.weekend_game_train
-        raise ValueError('unable to derive transit type from trip ID: {}'.format(trip_id))
+        raise ValueError(
+            "unable to derive transit type from trip ID: {}".format(trip_id)
+        )
 
     def __str__(self):
-        return self.name.replace('_', ' ').title()
+        return self.name.replace("_", " ").title()
 
 
 class UnexpectedGTFSLayoutError(Exception):
@@ -179,7 +209,6 @@ class UnknownStationError(Exception):
 
 
 class Caltrain(object):
-
     def __init__(self, gtfs_path=None):
 
         self.version = None
@@ -202,8 +231,7 @@ class Caltrain(object):
         """
         # Use the default path if not specified.
         if gtfs_path is None:
-            gtfs_path = pkg_resources\
-                .resource_stream(__name__, _DEFAULT_GTFS_FILE)
+            gtfs_path = pkg_resources.resource_stream(__name__, _DEFAULT_GTFS_FILE)
 
         z = ZipFile(gtfs_path)
 
@@ -217,114 +245,123 @@ class Caltrain(object):
         fare_lookup = {}
 
         # Create a map if (start, dest) -> price
-        with z.open('fare_attributes.txt', 'r') as csvfile:
+        with z.open("fare_attributes.txt", "r") as csvfile:
             fare_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in fare_reader:
-                fare_lookup[r['fare_id']] = \
-                    tuple(int(x) for x in r['price'].split('.'))
+                fare_lookup[r["fare_id"]] = tuple(int(x) for x in r["price"].split("."))
 
         # Read in the fare IDs from station X to station Y.
-        with z.open('fare_rules.txt', 'r') as csvfile:
+        with z.open("fare_rules.txt", "r") as csvfile:
             fare_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in fare_reader:
-                if r['origin_id'] == '' or r['destination_id'] == '':
+                if r["origin_id"] == "" or r["destination_id"] == "":
                     continue
-                k = (int(r['origin_id']), int(r['destination_id']))
-                self._fares[k] = fare_lookup[r['fare_id']]
+                k = (int(r["origin_id"]), int(r["destination_id"]))
+                self._fares[k] = fare_lookup[r["fare_id"]]
 
         # ------------------------
         # 2. Record calendar dates
         # ------------------------
 
         # Record the days when certain trains are active.
-        with z.open('calendar.txt', 'r') as csvfile:
+        with z.open("calendar.txt", "r") as csvfile:
             calendar_reader = csv.reader(TextIOWrapper(csvfile))
             next(calendar_reader)  # skip the header
             for r in calendar_reader:
-                self._service_windows[r[0]].append(ServiceWindow(
-                    id=r[0],
-                    name=r[1],
-                    start=datetime.strptime(r[-2], '%Y%m%d').date(),
-                    end=datetime.strptime(r[-1], '%Y%m%d').date(),
-                    days=set(i for i, j in enumerate(r[2:9]) if int(j) == 1),
-                    removed=False,
-                ))
+                self._service_windows[r[0]].append(
+                    ServiceWindow(
+                        id=r[0],
+                        name=r[1],
+                        start=datetime.strptime(r[-2], "%Y%m%d").date(),
+                        end=datetime.strptime(r[-1], "%Y%m%d").date(),
+                        days=set(i for i, j in enumerate(r[2:9]) if int(j) == 1),
+                        removed=False,
+                    )
+                )
 
         # Find special events/holiday windows where trains are active.
-        with z.open('calendar_dates.txt', 'r') as csvfile:
+        with z.open("calendar_dates.txt", "r") as csvfile:
             calendar_reader = csv.reader(TextIOWrapper(csvfile))
             next(calendar_reader)  # skip the header
             for r in calendar_reader:
-                when = datetime.strptime(r[1], '%Y%m%d').date()
-                self._service_windows[r[0]].insert(0, ServiceWindow(
-                    id=r[0],
-                    name=r[1],
-                    start=when,
-                    end=when,
-                    days={when.weekday()},
-                    removed=r[-1] == '2',
-                ))
+                when = datetime.strptime(r[1], "%Y%m%d").date()
+                self._service_windows[r[0]].insert(
+                    0,
+                    ServiceWindow(
+                        id=r[0],
+                        name=r[1],
+                        start=when,
+                        end=when,
+                        days={when.weekday()},
+                        removed=r[-1] == "2",
+                    ),
+                )
 
         # ------------------
         # 3. Record stations
         # ------------------
-        with z.open('stops.txt', 'r') as csvfile:
+        with z.open("stops.txt", "r") as csvfile:
             trip_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in trip_reader:
                 # From observation, non-numeric stop IDs are useless information
                 # that should be skipped.
-                if not r['stop_id'].isdigit():
+                if not r["stop_id"].isdigit():
                     continue
-                stop_name = _STATIONS_RE.match(r['stop_name']).group(1).strip().upper()
-                self.stations[r['stop_id']] = {
-                    'name': _RENAME_MAP.get(stop_name, stop_name).title(),
-                    'zone': int(r['zone_id']) if r['zone_id'] else -1
+                stop_name = _STATIONS_RE.match(r["stop_name"]).group(1).strip().upper()
+                self.stations[r["stop_id"]] = {
+                    "name": _RENAME_MAP.get(stop_name, stop_name).title(),
+                    "zone": int(r["zone_id"]) if r["zone_id"] else -1,
                 }
 
         # ---------------------------
         # 4. Record train definitions
         # ---------------------------
-        with z.open('trips.txt', 'r') as csvfile:
+        with z.open("trips.txt", "r") as csvfile:
             train_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in train_reader:
-                train_dir = int(r['direction_id'])
-                transit_type = TransitType.from_trip_id(r['trip_id'])
-                service_windows = self._service_windows[r['service_id']]
-                self.trains[r['trip_id']] = Train(
-                    name=r['trip_short_name'],
+                train_dir = int(r["direction_id"])
+                transit_type = TransitType.from_trip_id(r["trip_id"])
+                service_windows = self._service_windows[r["service_id"]]
+                self.trains[r["trip_id"]] = Train(
+                    name=r["trip_short_name"],
                     kind=transit_type,
                     direction=Direction(train_dir),
                     stops={},
-                    service_windows=service_windows
+                    service_windows=service_windows,
                 )
 
         self.stations = dict(
-            (k, Station(v['name'], v['zone']))
-            for k, v in self.stations.items())
+            (k, Station(v["name"], v["zone"])) for k, v in self.stations.items()
+        )
 
         # -----------------------
         # 5. Record trip stations
         # -----------------------
-        with z.open('stop_times.txt', 'r') as csvfile:
+        with z.open("stop_times.txt", "r") as csvfile:
             stop_times_reader = csv.DictReader(TextIOWrapper(csvfile))
             for r in stop_times_reader:
-                stop_id = r['stop_id']
-                train = self.trains[r['trip_id']]
-                arrival_day, arrival = _resolve_time(r['arrival_time'])
-                departure_day, departure = _resolve_time(r['departure_time'])
-                train.stops[self.stations[stop_id]] =\
-                    Stop(arrival=arrival, arrival_day=arrival_day,
-                         departure=departure, departure_day=departure_day,
-                         stop_number=int(r['stop_sequence']))
+                stop_id = r["stop_id"]
+                train = self.trains[r["trip_id"]]
+                arrival_day, arrival = _resolve_time(r["arrival_time"])
+                departure_day, departure = _resolve_time(r["departure_time"])
+                train.stops[self.stations[stop_id]] = Stop(
+                    arrival=arrival,
+                    arrival_day=arrival_day,
+                    departure=departure,
+                    departure_day=departure_day,
+                    stop_number=int(r["stop_sequence"]),
+                )
 
         # For display
-        self.stations = \
-            dict(('_'.join(re.split('[^A-Za-z0-9]', v.name)).lower(), v)
-                 for _, v in self.stations.items())
+        self.stations = dict(
+            ("_".join(re.split("[^A-Za-z0-9]", v.name)).lower(), v)
+            for _, v in self.stations.items()
+        )
 
         # For station lookup by string
-        self._unambiguous_stations = dict((k.replace('_', ''), v)
-                                          for k, v in self.stations.items())
+        self._unambiguous_stations = dict(
+            (k.replace("_", ""), v) for k, v in self.stations.items()
+        )
 
     def get_station(self, name):
         """
@@ -391,7 +428,9 @@ class Caltrain(object):
             should_skip = set()
 
             for sw in train.service_windows:
-                in_time_window = sw.start <= after.date() <= sw.end and after.weekday() in sw.days
+                in_time_window = (
+                    sw.start <= after.date() <= sw.end and after.weekday() in sw.days
+                )
                 stops_at_stations = a in train.stops and b in train.stops
 
                 if not in_time_window or not stops_at_stations or sw.id in should_skip:
@@ -417,8 +456,9 @@ class Caltrain(object):
                         departure=stop_a.departure,
                         arrival=stop_b.arrival,
                         duration=_resolve_duration(stop_a, stop_b),
-                        train=train
-                    ))
+                        train=train,
+                    )
+                )
 
         possibilities.sort(key=lambda x: x.departure)
         return possibilities
