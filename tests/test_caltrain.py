@@ -13,7 +13,7 @@ class TestNextTrain(unittest.TestCase):
     def test_expected_next_train_week_day(self):
         c = Caltrain()
         next_trips = c.next_trips(
-            "sf", "sunnyvale", after=datetime.datetime(2019, 8, 19, 20, 0, 0)
+            "sf", "sunnyvale", after=datetime.datetime(2020, 2, 13, 20, 0, 0)
         )
 
         self.assertGreater(len(next_trips), 1)
@@ -29,7 +29,7 @@ class TestNextTrain(unittest.TestCase):
     def test_expected_next_train_weekend(self):
         c = Caltrain()
         next_trips = c.next_trips(
-            "palo alto", "san bruno", after=datetime.datetime(2019, 8, 24, 11, 0, 0)
+            "palo alto", "san bruno", after=datetime.datetime(2020, 2, 8, 11, 0, 0)
         )
 
         self.assertGreater(len(next_trips), 1)
@@ -47,7 +47,7 @@ class TestNextTrain(unittest.TestCase):
         next_trips = c.next_trips(
             "hillsdale",
             "san jose diridon",
-            after=datetime.datetime(2019, 9, 2, 12, 23, 0),
+            after=datetime.datetime(2020, 2, 17, 12, 23, 0),
         )
 
         self.assertGreater(len(next_trips), 1)
@@ -58,13 +58,13 @@ class TestNextTrain(unittest.TestCase):
         self.assertEqual(datetime.time(13, 13), next_trip.arrival)
         self.assertEqual(datetime.timedelta(minutes=43), next_trip.duration)
         self.assertEqual(TransitType.baby_bullet, next_trip.train.kind)
-        self.assertEqual("802", next_trip.train.name)
+        self.assertEqual("802H", next_trip.train.name)
 
         # This should be identical to the Sunday schedule.
         sunday_trips = c.next_trips(
             "hillsdale",
             "san jose diridon",
-            after=datetime.datetime(2019, 9, 1, 12, 23, 0),
+            after=datetime.datetime(2020, 2, 16, 12, 29, 0),
         )
 
         for i, (a, e) in enumerate(zip(next_trips, sunday_trips)):
@@ -75,26 +75,30 @@ class TestNextTrain(unittest.TestCase):
         next_trips = c.next_trips(
             "san jose diridon",
             "san francisco",
-            after=datetime.datetime(2019, 5, 26, 9, 30, 0),
+            after=datetime.datetime(2020, 2, 8, 8, 30, 0),
         )
 
         self.assertGreater(len(next_trips), 1)
 
         # Event train
         self.assertIsNotNone(next_trips[0])
-        self.assertEqual(datetime.time(9, 41), next_trips[0].departure)
-        self.assertEqual(datetime.time(10, 45), next_trips[0].arrival)
-        self.assertEqual(datetime.timedelta(hours=1, minutes=4), next_trips[0].duration)
+        self.assertEqual(datetime.time(8, 33), next_trips[0].departure)
+        self.assertEqual(datetime.time(9, 51), next_trips[0].arrival)
+        self.assertEqual(
+            datetime.timedelta(hours=1, minutes=18), next_trips[0].duration
+        )
         self.assertEqual(TransitType.weekend_game_train, next_trips[0].train.kind)
-        self.assertEqual("609", next_trips[0].train.name)
+        self.assertEqual("635", next_trips[0].train.name)
 
         # Regular train
         self.assertIsNotNone(next_trips[1])
-        self.assertEqual(datetime.time(9, 51), next_trips[1].departure)
-        self.assertEqual(datetime.time(11, 0), next_trips[1].arrival)
-        self.assertEqual(datetime.timedelta(hours=1, minutes=9), next_trips[1].duration)
-        self.assertEqual(TransitType.baby_bullet, next_trips[1].train.kind)
-        self.assertEqual("801", next_trips[1].train.name)
+        self.assertEqual(datetime.time(8, 38), next_trips[1].departure)
+        self.assertEqual(datetime.time(10, 22), next_trips[1].arrival)
+        self.assertEqual(
+            datetime.timedelta(hours=1, minutes=44), next_trips[1].duration
+        )
+        self.assertEqual(TransitType.local, next_trips[1].train.kind)
+        self.assertEqual("423", next_trips[1].train.name)
 
 
 class TestFare(unittest.TestCase):
@@ -110,5 +114,5 @@ class TestAlternateFile(unittest.TestCase):
     def test_explicit_gtfs(self):
         here = os.path.abspath(os.path.dirname(__file__))
         c = Caltrain(
-            os.path.join(here, "../python_caltrain/data/caltrain_gtfs_latest.zip")
+            os.path.join(here, "../python_caltrain/data/GTFSTransitData_ct.zip")
         )

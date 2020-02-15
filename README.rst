@@ -23,7 +23,7 @@ Does this library require an internet connection?
 ``python-caltrain`` does **not** require an internet connection, making
 it easy to embed into offline applications. It relies on the `Caltrain
 GTFS
-file <http://www.caltrain.com/Assets/GTFS/caltrain/Caltrain-GTFS.zip>`__,
+file <http://api.511.org/transit/datafeeds?&operator_id=ct&api_key=YOUR_KEY_HERE>`__,
 which is updated usually a couple of times per year at most. This
 library will update in accordance with announcements from Caltrain. The
 version number is **year.month.rev** to signify how recent it is.

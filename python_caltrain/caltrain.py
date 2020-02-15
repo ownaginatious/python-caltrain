@@ -117,7 +117,7 @@ _RENAME_MAP = {
     "CALIFORNIA AVE": "CALIFORNIA AVENUE",
 }
 
-_DEFAULT_GTFS_FILE = "data/caltrain_gtfs_latest.zip"
+_DEFAULT_GTFS_FILE = "data/GTFSTransitData_ct.zip"
 _ALIAS_MAP_RAW = {
     "SAN FRANCISCO": ("SF", "SAN FRAN"),
     "SOUTH SAN FRANCISCO": (
@@ -188,7 +188,7 @@ class TransitType(Enum):
             return TransitType.baby_bullet
         if trip_id[0] in ("1", "4"):
             return TransitType.local
-        if trip_id[0] == "2":
+        if trip_id[0] in ("2", "5"):
             return TransitType.limited
         if trip_id[0] == "6":
             return TransitType.weekend_game_train
@@ -329,7 +329,7 @@ class Caltrain(object):
                 transit_type = TransitType.from_trip_id(r["trip_id"])
                 service_windows = self._service_windows[r["service_id"]]
                 self.trains[r["trip_id"]] = Train(
-                    name=r["trip_short_name"],
+                    name=r["trip_short_name"] if r["trip_short_name"] else r["trip_id"],
                     kind=transit_type,
                     direction=Direction(train_dir),
                     stops={},
